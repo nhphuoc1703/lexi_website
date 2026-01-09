@@ -1,0 +1,157 @@
+.Call_window {
+    height: 100vh;
+    background: linear-gradient(-45deg, #B89A75, #9A75B8);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+/* ==============Remote video (big area)=============== */
+.remote_video_container {
+    flex: 1;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+.remote_video {
+    width: 80%;
+    height: 100%;
+    object-fit: cover;
+}
+/* =============Local video (small box in corner)============== */
+.local_video_container {
+    position: absolute;
+    bottom: 90px;
+    right: 20px;
+    width: 220px;
+    height: 140px;
+    /* width: 100%;
+    height: 100%; */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+.local_video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+/* ================Controls at bottom============== */
+.call_controls {
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+}
+.call_controls button {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+.hangup_btn {
+    background-color: #c44141;
+    color: white;
+}
+.camera_off_overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+    background: rgb(150, 150, 150);
+    z-index: 10;
+}
+/* ==============styling for the control buttons=============== */
+.control_btn {
+    padding: 12px 22px;
+    border-radius: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    background: white;
+    transition: transform 0.15s ease, box-shadow 0.2s;
+}
+/* Hover: subtle pulse */
+.control_btn:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+/* Click: bounce */
+.control_btn:active {
+    transform: scale(0.92);
+}
+/* mic button */
+.mic_btn {
+    background: #4caf50;
+    color: white;
+}
+.mic_btn.off {
+    background: #d9534f;
+}
+/* camera button */
+.cam_btn {
+    background: #5a8fd8;
+    color: white;
+}
+.cam_btn.off {
+    background: #888;
+}
+/* hangup button */
+.hangup_btn {
+    background: #d9534f;
+    color: white;
+    box-shadow: 0 0 10px rgba(217,83,79,0.6);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.hangup_btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 18px rgba(217,83,79,0.9);
+}
+/* Little shake animation */
+.hangup_btn:active {
+    animation: shake 0.2s;
+}
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+/* ============== translation panel ================= */
+/* Right-side translation panel (occupies remaining 20%) */
+.translation_panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20%;              /* matches remote_video being 80% */
+    height: calc(100% - 280px);  /* leave room for the bottom controls */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(6px);
+    padding: 16px;
+    overflow-y: auto;
+    border-left: 2px solid rgba(255,255,255,0.4);
+    box-shadow: -3px 0 12px rgba(0, 0, 0, 0.15);
+}
+.translation_panel h3 {
+    margin-top: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+.translation_output {
+    margin-top: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    height: 77%;
+    overflow-y: auto;
+}

@@ -7,7 +7,10 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // importing the pages
 import { Sign_in } from './Pages/sign_in.js';
+import { Main } from './Pages/main.js';
 import { Loading } from './Pages/loading.js';
+import { Video_call } from './Pages/video_call.js';
+import ProtectedRoute from './ProtectedRoute.js';
 
 function App() {
   return (
@@ -32,6 +35,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Loading />} />
         <Route path="/sign_in" element={<Sign_in />} />
+        <Route path='/main' element={<ProtectedRoute><Main /></ProtectedRoute>} />
+        <Route path='/video_call' element={<ProtectedRoute><Video_call /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

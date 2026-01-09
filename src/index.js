@@ -3,11 +3,15 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+// import the general socket to wrap all pages with
+import { SocketProvider } from './context/SocketContext.js';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <SocketProvider>
+      <App />
+    </SocketProvider>
   </React.StrictMode>
 );
 
