@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useFetcher, useLocation, useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext.js";
-import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaCamera } from "react-icons/fa";
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaSignLanguage } from "react-icons/fa";
 import "../Styling/video_call.css";
 
 export function Video_call() {
@@ -22,17 +22,21 @@ export function Video_call() {
     const socketRef = useRef(null);
 
     // buffer for an incoming offer (so we don't miss an offer sent before page is ready)
-    const incomingOfferRef = useRef(incomingOfferFromNav || null);
+    // const incomingOfferRef = useRef(incomingOfferFromNav || null);
     // const { offer, from } = incomingOfferRef.current;
     
+    // only specifically for the call_controls styling
+    const [isHovered, setIsHovered] = useState(false);
+    const hideTimer = useRef(null);
     // isMicOn and isCamOn are the basic buttons inside a call, to toggle mic, camera
     const [isMicOn, setIsMicOn] = useState(true);
     const [isCamOn, setIsCamOn] = useState(true);
+    // isTranslateOn and setIsTranslate is for the translate panel button
+    const [isTranslateOn, setIsTranslateOn] = useState(true);
     // const [callActive, setCallActive] = useState(false);
     const [otherUserId, setOtherUserId] = useState(callee?.id || null);
     // keep a ref for otherUserId that can be read synchronously inside PC handlers
     const otherUserIdRef = useRef(callee?.id || null);
-
     // STUN/TURN servers (replace/add your TURN server for production)
     const rtcConfig = {
         iceServers: [
@@ -43,7 +47,7 @@ export function Video_call() {
     const pendingIceCandidatesRef = useRef([]);
     // ================== INIT Socket =====================
     // guards to only run certain startup code once
-    const socketMountedRef = useRef(false);
+    // const socketMountedRef = useRef(false);
     const callerStartedRef = useRef(false);
     // import the general socket from App.js
     const appSocket = useSocket();
@@ -144,7 +148,7 @@ export function Video_call() {
             s.off("call_ended");
         };
     }, [appSocket]);
-    // useEffect here is used to call startAsCaller(), which sets up devices (mic, video, etc.), create Peer Connection, etc.
+    // --------------- Ensure caller has stream (video + audio) (ensureLocalStream()) + creates WebRTC peer connection (createPeerConnection()) + sends offer to callee (startAsCaller()) -------------------------------
     useEffect(() => {
         if (!isCaller) return;
         if (callerStartedRef.current) return;
@@ -162,30 +166,23 @@ export function Video_call() {
             })();
         }
     }, [isCaller, callee?.id]);
-    // ----------------- Ensure callee has camera + pc ready on mount -----------------
-    useEffect(() => {
-        // If this page is the callee (not the caller), proactively get camera and PC so we won't miss offers
-        if (isCaller) return;
+    // ----------------- Ensure callee has camera ready on mount -----------------
+    // useEffect(() => {
+    //     // If this page is the callee (not the caller), proactively get camera and PC so we won't miss offers
+    //     if (isCaller) return;
 
-        (async () => {
-            try {
-                // Wait until we actually know who is calling
-                // const offer = incomingOfferRef.current;
-                // if (!offer || !offer.from) return;
-
-                // setOtherUserId(offer.from);
-                await ensureLocalStream();
-                // await createPeerConnection({ addLocalTracks: true });
-                // If an offer was passed in via navigation state, or buffered earlier, process it now
-                // await processIncomingOfferIfAny();
-            } catch (err) {
-                console.error("Callee pre-warm failed:", err);
-            }
-        })();
-    }, [isCaller]);
+    //     (async () => {
+    //         try {
+    //             await ensureLocalStream();
+    //         } catch (err) {
+    //             console.error("Callee pre-warm failed:", err);
+    //         }
+    //     })();
+    // }, [isCaller]);
+    // =================================== FUNCTIONS DEFINITION ============================
     // ================== ensure local stream of device ========================
     async function ensureLocalStream() {
-        if (localStreamRef.current) return localStreamRef.current;
+        if (localStreamRef.current?.active) return localStreamRef.current;
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
@@ -372,6 +369,10 @@ export function Video_call() {
             setIsMicOn(audioTrack.enabled);
         }
     };
+    // Toggle Translation panel
+    const toggleTranslation = () => {
+        setIsTranslateOn(prev => !prev)
+    }
     // End call (if localEnd true, inform remote)
     function endCall(localEnd = true) {
         // close RTCPeerConnection
@@ -418,10 +419,20 @@ export function Video_call() {
                 <video ref={remoteVideoRef} autoPlay playsInline className="remote_video"/>
             </div>
             {/* container for translation panel */}
-            <div className="translation_panel">
-                <h3>Translation</h3>
-                <div className="translation_output">
-                    <p>Waiting for signs...</p>
+            <div className={`translation_panel_wrapper ${isTranslateOn ? "open" : "closed"}`}>
+                <div className="translation_panel">
+                    {isTranslateOn ? (
+                        // isTranslateOn == true --> show the panel
+                        <>
+                            <h3>Translation</h3>
+                            <div className="translation_output">
+                                <p>Waiting for signs...</p>
+                            </div>
+                        </>
+                    ) : (
+                        // isTranslateOn == false --> hide the panel
+                        <FaSignLanguage size={24} />
+                    )}
                 </div>
             </div>
             {/* container for user's screen (the smaller one) */}
@@ -436,7 +447,21 @@ export function Video_call() {
             </div>
 
             {/* container for call controls (toggle mic, camera, hang up, etc.) */}
-            <div className="call_controls">
+            <div className={`call_controls ${isHovered ? "activate_hover" : ""}`}
+            onMouseEnter={() => {
+                clearTimeout(hideTimer.current);
+                setIsHovered(true);
+            }}
+            onMouseLeave={() => {
+                hideTimer.current = setTimeout(() => {
+                setIsHovered(false);
+                }, 300);
+            }}
+            >
+                <button className={`control_btn translate_btn ${!isTranslateOn ? "off" : ""}`} onClick={toggleTranslation}>
+                {/* <button className="control_btn"> */}
+                    <FaSignLanguage size={20} />
+                </button>
                 <button className={`control_btn mic_btn ${!isMicOn ? "off" : ""}`} onClick={toggleMic}>
                     {/* <img src={micOn} alt="mic" className="control_icon"/> */}
                     {isMicOn? <FaMicrophone size={20}/> : <FaMicrophoneSlash size={20}/>}
