@@ -9,6 +9,7 @@
     grid-template-columns: 1fr 2.5fr 1fr; /* adjust for proportions */
     grid-template-rows: 80px auto;
 }
+/* =============== for the header structure =============== */
 .header {
     grid-area: header;
     display: grid;
@@ -19,6 +20,7 @@
     position: relative;
     background: transparent;
 }
+/* ================ for the logo button =================== */
 .main-btn {
     grid-area: logo;
     /* position: absolute; */
@@ -30,8 +32,11 @@
     margin-top: 10px;
     margin-left: 30px;
 }
+/* =============== for the search bar ============== */
 .search_bar{
     grid-area: search;
+    position: relative;
+    z-index: 1001;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -56,6 +61,67 @@
 }
 .search_bar input::placeholder {
     color: rgba(255, 255, 255, 0.5);
+}
+/* Search mask (for background of dropdown) */
+.search_mask {
+    position: fixed;
+    inset: 0;
+    /* width: 100%;
+    height: 100%; */
+    background: rgb(0,0,0,0.45);
+    z-index: 900;
+}
+/* Dropdown container */
+.search_dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: rgba(63, 60, 60, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    overflow: hidden;
+    z-index: 1000;
+    animation: dropdownFade 0.2s ease;
+}
+/* Individual result */
+.search_result {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.15s ease;
+}
+.search_result:hover {
+    background: rgba(255,255,255,0.12);
+}
+.search_name {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+.search_username {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+}
+/* Empty state */
+.search_empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+}
+/* Smooth entrance */
+@keyframes dropdownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 /* =======================styling for header controls - add friend button, etc. and their popup======================== */
 .header_controls {
@@ -96,7 +162,8 @@
     z-index: 999;
 }
 .add_friend_content {
-    background: white;
+    background: rgba(63, 60, 60, 0.95);
+    color: white;
     padding: 24px;
     width: 500px;
     border-radius: 14px;
@@ -113,7 +180,9 @@
     margin: 12px 0;
     border: 1px solid #bbb;
     border-radius: 8px;
+    outline: none;
     font-size: 15px;
+    box-sizing: border-box;
 }
 .add_friend_submit {
     width: 100%;
@@ -225,19 +294,153 @@
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
 }
-.account_btn {
+.account_settings_btn {
     background: #75b89a;
     border: none;
     color: white;
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: 8px;
-    font-size: 13px;
     cursor: pointer;
     transition: background 0.2s;
 }
-.account_btn:hover {
-    background: #8fd4b6;
+.account_settings_btn:hover {
+    background: #547e6c;
 }
+.settings_overlay {
+    position: fixed;
+    inset: 0;
+    background: rgb(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+.settings_container {
+    background: rgba(63, 60, 60, 0.95);
+    box-shadow: 0 8px 24px rgb(61, 61, 61);
+    padding: 24px;
+    width: min(90vw, 800px);
+    height: min(85vh, 600px);
+    min-width: 600px;
+    min-height: 420px;
+    border-radius: 14px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    animation: popupFadeIn 0.25s ease;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+.settings_sidebar {
+  width: 180px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+.settings_sidebar button {
+  background: none;
+  border: none;
+  padding: 10px;
+  margin-top: 10px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  color: white;
+}
+.settings_sidebar button.active {
+  background: rgba(29, 28, 28, 0.95);
+  font-weight: 600;
+}
+.settings_content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  color: white;
+  position: relative;
+}
+.settings_close_btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #fff; /* or #fff if popup is dark */
+    z-index: 10;
+    padding: 0;
+}
+.settings_close_btn:hover {
+    color: #000;
+}
+.settings_actions {
+    display: flex;
+    justify-content: right;
+    margin-top: 20px;
+}
+.settings_actions_btn {
+    padding: 8px 22px;
+    border-radius: 10px;
+    border: none;
+
+    background: linear-gradient(-45deg, #75B89A, #7bbdc0 20%, #75B879);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+    width: fit-content;
+    min-width: unset;
+}
+.settings_actions_btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.settings_actions_btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+.settings_actions_btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+.profile_settings_field,
+.account_settings_field {
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 12px rgb(0, 0, 0, 0.2);
+}
+.profile_settings input,
+.account_settings input {
+    width: 95%;
+    height: 80%;
+    box-sizing: border-box;
+    font-size: 16px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+}
+/* width: 90%;
+    height: 70%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #fff;
+ */
+
 /* placeholder box for now */
 /* .profile,
 .my_account,
@@ -247,10 +450,11 @@
   border-radius: 10px;
   padding: 15px;
 } */
+.profile_settings,
+.account_settings,
 .audio_settings,
-.video_setting {
+.video_settings {
     padding: 15px;
-    color: white;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -425,7 +629,7 @@
 .slider_container:active .volume_tooltip {
     opacity: 1;
 }
-.video_setting select {
+.video_settings select {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 8px;
@@ -435,7 +639,7 @@
     outline: none;
     cursor: pointer;
 }
-.video_setting option {
+.video_settings option {
     background: #333;
     color: white;
 }
@@ -452,11 +656,11 @@
     z-index: 999; /*the 3rd dimension index (layers of elements) - just to make sure it's on top*/
 }
 .popup_content {
-    background: #2c2c2c;
+    background: rgba(63, 60, 60, 0.95);
     color: white;
     padding: 30px 40px;
     border-radius: 12px;
-    box-shadow: 0 4px 30px rgba(255,255,255,0.2);
+    box-shadow: 0 4px 30px rgb(61, 61, 61);
     transform: scale(0.8);
     opacity: 0;
     animation: popupFadeIn 0.3s ease forwards;
@@ -509,7 +713,7 @@
     background: rgba(255, 255, 255, 0.05);
     border-right: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
-    align-items: center;
+    align-items: top;
     justify-content: center;
     padding: 20px;
     color: white;
@@ -539,6 +743,17 @@
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;
 }
+/* Left group */
+.contact_display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Contact diaplay name styling*/
+.contact_name {
+    font-weight: 500;
+}
 .contact_item:hover {
     background: rgba(255, 255, 255, 0.15);
     transform: scale(1.01);
@@ -566,12 +781,12 @@
     justify-content: center;
 }
 .call_btn:hover {
-    background-color: #45a049;
-    transform: scale(1.1);
+    background-color: #3a863d;
+    /* transform: scale(1.1); */
 }
-.call_btn:active {
+/* .call_btn:active {
     transform: scale(0.95);
-}
+} */
 /* ================styling for profiles_box================= */
 .profiles_box {
     grid-area: profile;

@@ -4,12 +4,16 @@ import { useNavigate } from "react-router-dom";
 // import { io } from "socket.io-client";
 import { useSocket } from "../context/SocketContext.js";
 import logo from '../assets/lexi_web_icon.png';
-import { FaUserPlus, FaBell, FaSignOutAlt, FaPhone } from "react-icons/fa";
+import { FaUserPlus, FaBell, FaSignOutAlt, FaPhone, FaTimes, FaCog } from "react-icons/fa";
 import "../Styling/main.css";
 
 export function Main() {
     // load in user from sign in page - after user have logged in/signed up with a valid account
-    const user = JSON.parse(localStorage.getItem("user"))
+    // we put user in useState because React will store this "user" object for repeated use, instead of each useEffect re-rendering and creating a new "user" object
+    // we write "[user]" to deconstruct the array that useState() returns by default
+    const [user] = useState(() => {
+        return JSON.parse(localStorage.getItem("user"));
+    });
     // navigate back to login/sign up page if someone tries to go to main manually
     const navigate = useNavigate();
     useEffect(() => {
@@ -205,11 +209,41 @@ export function Main() {
     // specifically for the friends notification button, and its popup
     const [showNotifications, setShowNotifications] = useState(false);
     const [friendRequests, setFriendRequests] = useState([]);
-    // specifically for real-time functionalities (e.g. real-time notifications)
-    // const [socket, setSocket] = useState(null);
+    // specifically for the settings popup
+    const [showSettings, setShowSettings] = useState(false);
+    // specifically for the settings text input field - to control the state of the "save" button
+    const [settingsForms, setSettingsForms] = useState({
+        profile: {
+            displayName: user?.display_name || "",
+            username: user?.username || ""
+        },
+        account: {
+            email: user?.email || "",
+            oldPassword: "",
+            newPassword: "",
+            confirmPassword: ""
+        }
+    });
+    const [initialSettingsForms, setInitialSettingsForms] = useState({
+        profile: {
+            displayName: user?.display_name || "",
+            username: user?.username || ""
+        },
+        account: {
+            email: user?.email || "",
+            oldPassword: "",
+            newPassword: "",
+            confirmPassword: ""
+        }
+    });
+    // specifically for each tab inside the settings popup (possible values e.g. "profile", "account", "device", etc.)
+    const [activeSettingsTab, setActiveSettingsTab] = useState("profile");
     // specifically for incoming calls
     const [incomingCall, setIncomingCall] = useState(null);
     const [offerForVideoCall, setOfferForVideoCall] = useState(null);
+    // for the search bar behaviors
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearchResults, setShowSearchResults] = useState(false);
     // import the shared socket.io from App.js
     const socketRef = useSocket();
     // updating real-time notifications
@@ -260,7 +294,6 @@ export function Main() {
                 state: { isCaller: true, contact: { id: from } }
             });
         });
-        // setSocket(s);
         return () => {
             // s.disconnect();
             s.off("new_friend_request");
@@ -268,18 +301,81 @@ export function Main() {
             s.off("call_accepted");
         };
     }, [socketRef.current]);
-    // Function to update slider CSS variable dynamically
+    // Variable to update slider CSS variable dynamically
     const handleSliderChange = (e, setter) => {
         const value = e.target.value;
         setter(value);
         e.target.style.setProperty('--value', `${value}%`);
+    };
+    // Variable to manage search bar behavior (a panel should appear from the search bar when input is typed in)
+    const filteredContacts = contacts.filter(c =>
+        c.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    // Variable to check if settings form fields have been changed or not (to dynamically disable "save" button)
+    const isDirty = (tab) => {
+        const current = settingsForms[tab];
+        const initial = initialSettingsForms[tab];
+
+        return Object.keys(current).some(
+            key => current[key] !== initial[key]
+        );
+    };
+    const handleFormChange = (tab, field, value) => {
+        setSettingsForms(prev => ({
+            ...prev,
+            [tab]: {
+                ...prev[tab],
+                [field]: value
+            }
+        }));
     };
     return (
         <div className="Page">
             <div className="header">
                 <img src={logo} alt="logo" className="main-btn" onClick={() => setShowMenu(true)}/>        
                 <div className="search_bar">
-                    <input type="text" placeholder="Let's find your partner-in-chat"/>
+                    <input 
+                        type="text" 
+                        placeholder="Let's find your partner-in-chat"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setSearchQuery(value);
+                            setShowSearchResults(value.trim().length > 0);
+                        }}
+                        onFocus={() => {
+                            if (searchQuery.trim()) setShowSearchResults(true);
+                        }}
+                        onBlur={() => {
+                            // delay allows click on result before closing
+                            setTimeout(() => setShowSearchResults(false), 150);
+                        }}
+                    />
+                    {showSearchResults && (
+                        <div className="search_dropdown">
+                            {filteredContacts.length === 0 ? (
+                                <div className="search_empty">
+                                    No contacts found
+                                </div>
+                            ) : (
+                                filteredContacts.map((c, i) => (
+                                    <div
+                                        key={i}
+                                        className="search_result"
+                                        onMouseDown={() => {
+                                            setSelectedProfile(c);
+                                            setSearchQuery("");
+                                            setShowSearchResults(false);
+                                        }}
+                                    >
+                                        <span className="search_name">{c.display_name}</span>
+                                        <span className="search_username">@{c.username}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="header_controls">
                     <button className="add_friend_btn" onClick={() => setShowAddFriend(true)}>
@@ -306,64 +402,20 @@ export function Main() {
                             <h4 className="display_name">{user?.display_name}</h4>
                             <p className="username">@{user?.username}</p>
                         </div>
-                        <button className="account_btn">btn</button>
-                    </div>
-                    <div className="audio_settings">
-                        <h3>Audio settings</h3>
-                        <div className="mic_control">
-                            <label htmlFor="input_volume">Input volume</label>
-                            <div className="slider_container">
-                                <input
-                                    type="range"
-                                    id="input_volume"
-                                    min="0"
-                                    max="100"
-                                    value={inputVolume}
-                                    onChange={(e) => handleSliderChange(e, setInputVolume)}
-                                />
-                                <span className="volume_tooltip" style={{left: `${inputVolume}%`}}>{inputVolume}%</span>
-                            </div>
-                        </div>
-                        <div className="output_control">
-                            <label htmlFor="output_volume">Output volume</label>
-                            <div className="slider_container">
-                                <input
-                                    type="range"
-                                    id="output_volume"
-                                    min="0"
-                                    max="100"
-                                    value={outputVolume}
-                                    onChange={(e) => handleSliderChange(e, setOutputVolume)}
-                                />
-                                <span className="volume_tooltip" style={{left: `${outputVolume}%`}}>{outputVolume}%</span>
-                            </div>
-                        </div>
-                        <div className="output_selection">
-                            <label htmlFor="output_device">Output device</label>
-                            <select id="output_device">
-                                <option>Default speaker</option>
-                                <option>External speaker</option>
-                            </select>
-                        </div>
+                        <button
+                            className="account_settings_btn"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowSettings(true);
+                            }}
+                            title="Settings"
+                        >
+                            <FaCog size={15} />
+                        </button>
                     </div>
                 </div>
-                <div className="profile_setting">
-                    {/* e.g. display name, username, pronouns */}
-                </div>
-                <div className="video_setting">
-                    {/* e.g. , video input device, video quality, background? */}
-                    <h3>Video settings</h3>
-                    <label htmlFor="camera">camera</label>
-                    <select id="camera">
-                        <option>Default camera</option>
-                        <option>External camera</option>
-                    </select>
-                    <label htmlFor="resolution">Resolution</label>
-                    <select id="resolution">
-                        <option>720p</option>
-                        <option>1080p</option>
-                        <option>4K</option>
-                    </select>
+                <div className="recent_calls">
+
                 </div>
             </div>
             <div className="contacts_box">
@@ -374,13 +426,15 @@ export function Main() {
                     <div className="contacts_list">
                         {contacts.map((c, index) => (
                             <div className="contact_item" key={index} onClick={() => setSelectedProfile(c)}>
-                                <p>{c.display_name}</p>
+                                <div className="contact_display">
+                                    <span className={`contact_status offline`}></span>
+                                    <p className="contact_name">{c.display_name}</p>
+                                </div>
                                 {/* <span className={`contact_status ${c.status}`}></span>  - we can't use this for now because I need to update the database with status, and have the app constantly tracking user status*/}
                                 <button className="call_btn" onClick={(e) => {
                                     e.stopPropagation();
                                     startCall(c);
                                 }}><FaPhone size={18}/></button> 
-                                <span className={`contact_status offline`}></span>
                             </div>
                         ))}
                     </div>
@@ -411,6 +465,170 @@ export function Main() {
                     </div>
                 )}
             </div>
+            {/* settings box popup */}
+            {showSettings && (
+                <div className="settings_overlay" onClick={() => setShowSettings(false)}>
+                    <div className="settings_container" onClick={(e) => e.stopPropagation()}>
+                        {/* Left side - settings menu */}
+                        <div className="settings_sidebar">
+                           <h3 className="settings_title">Settings</h3>
+                           {/* Profile settings tab */}
+                           <button
+                                className={activeSettingsTab === "profile" ? "active" : ""}
+                                onClick={() => setActiveSettingsTab("profile")}
+                            >
+                                Profile
+                            </button>
+                            {/* Account settings tab */}
+                            <button
+                                className={activeSettingsTab === "account" ? "active" : ""}
+                                onClick={() => setActiveSettingsTab("account")}
+                            >
+                                Account
+                            </button>
+                            {/* Device settings tab */}
+                            <button
+                                className={activeSettingsTab === "device" ? "active" : ""}
+                                onClick={() => setActiveSettingsTab("device")}
+                            >
+                                Device
+                            </button>
+                        </div>
+                        {/* Right side - settings of each tab */}
+                        <div className="settings_content">
+                            {/* Close button */}
+                            <button className="settings_close_btn" onClick={() => setShowSettings(false)} title="close">
+                                <FaTimes size={20}/>
+                            </button>
+                            {/* Profile settings */}
+                            {activeSettingsTab === "profile" && (
+                                <div className="profile_settings">
+                                    {/* e.g. display name, username, pronouns */}
+                                    <h3>Profile Settings</h3>
+                                    <label>Display Name</label>
+                                    <div className="profile_settings_field">
+                                        <input
+                                            type="text"
+                                            value={settingsForms.profile.displayName}
+                                            onChange={(e) => handleFormChange("profile", "displayName", e.target.value)}
+                                        />
+                                    </div>
+                                    <label>Username</label>
+                                    <div className="profile_settings_field">
+                                        <input 
+                                            type="text" 
+                                            value={settingsForms.profile.username}
+                                            onChange={(e) => handleFormChange("profile", "username", e.target.value)} />
+                                    </div>
+                                    <div className="settings_actions">
+                                        <button className="settings_actions_btn" disabled={!isDirty(activeSettingsTab)}>Save</button>
+                                    </div>
+                                </div>
+                            )}
+                            {/* Account settings */}
+                            {activeSettingsTab === "account" && (
+                                <div className="account_settings">
+                                    <h3>Account Settings</h3>
+                                    <label>Email</label>
+                                    <div className="account_settings_field">
+                                        <input 
+                                            type="email"
+                                            value={settingsForms.account.email}
+                                            onChange={(e) => handleFormChange("account", "email", e.target.value)} 
+                                        />
+                                    </div>
+                                    <label>Change password</label>
+                                    <div className="account_settings_field">
+                                        <input 
+                                            type="password"
+                                            value={settingsForms.account.oldPassword}
+                                            onChange={(e) => handleFormChange("account", "oldPassword", e.target.value)}
+                                            placeholder="Old password"
+                                        />
+                                    </div>
+                                    <div className="account_settings_field">
+                                        <input 
+                                            type="password"
+                                            value={settingsForms.account.newPassword}
+                                            onChange={(e) => handleFormChange("account", "newPassword", e.target.value)}
+                                            placeholder="New password" 
+                                        />
+                                    </div>
+                                    <div className="account_settings_field">
+                                        <input 
+                                            type="password"
+                                            value={settingsForms.account.confirmPassword}
+                                            onChange={(e) => handleFormChange("account", "confirmPassword", e.target.value)}
+                                            placeholder="Confirm new password" 
+                                        />
+                                    </div>
+                                    <div className="settings_actions">
+                                        <button className="settings_actions_btn" disabled={!isDirty(activeSettingsTab)}>Save</button>
+                                    </div>
+                                </div>
+                            )}
+                            {/* Device settings */}
+                            {activeSettingsTab === "device"  && (
+                                <div className="device_settings">
+                                    <div className="audio_settings">
+                                        <h3>Audio settings</h3>
+                                        <div className="mic_control">
+                                            <label htmlFor="input_volume">Input volume</label>
+                                            <div className="slider_container">
+                                                <input
+                                                    type="range"
+                                                    id="input_volume"
+                                                    min="0"
+                                                    max="100"
+                                                    value={inputVolume}
+                                                    onChange={(e) => handleSliderChange(e, setInputVolume)}
+                                                />
+                                                <span className="volume_tooltip" style={{left: `${inputVolume}%`}}>{inputVolume}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="output_control">
+                                            <label htmlFor="output_volume">Output volume</label>
+                                            <div className="slider_container">
+                                                <input
+                                                    type="range"
+                                                    id="output_volume"
+                                                    min="0"
+                                                    max="100"
+                                                    value={outputVolume}
+                                                    onChange={(e) => handleSliderChange(e, setOutputVolume)}
+                                                />
+                                                <span className="volume_tooltip" style={{left: `${outputVolume}%`}}>{outputVolume}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="output_selection">
+                                            <label htmlFor="output_device">Output device</label>
+                                            <select id="output_device">
+                                                <option>Default speaker</option>
+                                                <option>External speaker</option>
+                                            </select>
+                                        </div>
+                                        <div className="video_settings">
+                                            {/* e.g. , video input device, video quality, background? */}
+                                            <h3>Video settings</h3>
+                                            <label htmlFor="camera">camera</label>
+                                            <select id="camera">
+                                                <option>Default camera</option>
+                                                <option>External camera</option>
+                                            </select>
+                                            <label htmlFor="resolution">Resolution</label>
+                                            <select id="resolution">
+                                                <option>720p</option>
+                                                <option>1080p</option>
+                                                <option>4K</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* account popup */}
             {showAccount && (
                 <div className="account_popup" onClick={() => setShowAccount(false)}> {/* prevent closing when clicking inside */}
@@ -520,6 +738,10 @@ export function Main() {
                         </div>
                     </div>
                 </div>
+            )}
+            {/* render a separate darkened background effect for search_dropdown */}
+            {showSearchResults && (
+                <div className="search_mask" onClick={() => setShowSearchResults(false)}/>
             )}
         </div>
     )
